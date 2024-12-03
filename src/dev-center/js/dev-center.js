@@ -30,6 +30,7 @@ let activeTab = "apps";
 let currently_editing_app;
 let dropped_items;
 let search_query;
+let originalValues = {};
 
 const APP_CATEGORIES = [
   { id: "games", label: "Games" },
@@ -570,11 +571,11 @@ function generate_edit_app_section(app) {
                   <label for="edit-app-app-id">App ID</label>
                   <input type="text" style="width: 362px;" class="app-uid" value="${html_encode(app.uid)}" readonly>
 
-                  <label for="edit-app-icon">Icon</label>
-                  <div id="edit-app-icon" style="background-image:url(${!app.icon ? "./img/app.svg" : html_encode(app.icon)});" ${app.icon ? 'data-url="' + html_encode(app.icon) + '"' : ""}>
-                      <div id="change-app-icon">Change App Icon</div>
-                  </div>
-                  <span id="edit-app-icon-delete" style="${app.icon ? "display:block;" : ""}">Remove icon</span>
+                <label for="edit-app-icon">Icon</label>
+                <div id="edit-app-icon" style="background-image:url(${!app.icon ? './img/app.svg' : html_encode(app.icon)});" ${app.icon ? 'data-url="' + html_encode(app.icon) + '"' : ''}  ${app.icon ? 'data-base64="' + html_encode(app.icon) + '"' : ''} >
+                    <div id="change-app-icon">Change App Icon</div>
+                </div>
+                <span id="edit-app-icon-delete" style="${app.icon ? 'display:block;' : ''}">Remove icon</span>
 
                   ${generateSocialImageSection(app)}
                   <label for="edit-app-description">Description</label>
@@ -650,10 +651,137 @@ function generate_edit_app_section(app) {
 
                 <hr style="margin-top: 40px;">
                 <button type="button" class="edit-app-save-btn button button-primary">Save</button>
+                <button type="button" class="edit-app-reset-btn button button-secondary">Reset</button>
             </form>
         </div>
     `;
   return h;
+}
+
+/* This function keeps track of the original values of the app before it is edited*/ 
+function trackOriginalValues(){
+    originalValues = {
+        title: $('#edit-app-title').val(),
+        name: $('#edit-app-name').val(),
+        indexURL: $('#edit-app-index-url').val(),
+        description: $('#edit-app-description').val(),
+        icon: $('#edit-app-icon').attr('data-base64'),
+        fileAssociations: $('#edit-app-filetype-associations').val(),
+        category: $('#edit-app-category').val(),
+        socialImage: $('#edit-app-social-image').attr('data-base64'),
+        windowSettings: {
+            width: $('#edit-app-window-width').val(),
+            height: $('#edit-app-window-height').val(),
+            top: $('#edit-app-window-top').val(),
+            left: $('#edit-app-window-left').val()
+        },
+        checkboxes: {
+            maximizeOnStart: $('#edit-app-maximize-on-start').is(':checked'),
+            background: $('#edit-app-background').is(':checked'),
+            resizableWindow: $('#edit-app-window-resizable').is(':checked'),
+            hideTitleBar: $('#edit-app-hide-titlebar').is(':checked'),
+            locked: $('#edit-app-locked').is(':checked'),
+            credentialless: $('#edit-app-credentialless').is(':checked'),
+            fullPageOnLanding: $('#edit-app-fullpage-on-landing').is(':checked')
+        }
+    };
+}
+
+/* This function compares for all fields and checks if anything has changed from before editting*/
+function hasChanges() {
+    // is icon changed
+    if($('#edit-app-icon').attr('data-base64') !== originalValues.icon){
+        return true;
+    }
+
+    // if social image is changed
+    if($('#edit-app-social-image').attr('data-base64') !== originalValues.socialImage){
+        return true;
+    }
+
+    // if any of the fields have changed
+    return(
+        $('#edit-app-title').val() !== originalValues.title ||
+        $('#edit-app-name').val() !== originalValues.name ||
+        $('#edit-app-index-url').val() !== originalValues.indexURL ||
+        $('#edit-app-description').val() !== originalValues.description ||
+        $('#edit-app-icon').attr('data-base64') !== originalValues.icon ||
+        $('#edit-app-filetype-associations').val() !== originalValues.fileAssociations ||
+        $('#edit-app-category').val() !== originalValues.category ||
+        $('#edit-app-social-image').attr('data-base64') !== originalValues.socialImage ||
+        $('#edit-app-window-width').val() !== originalValues.windowSettings.width ||
+        $('#edit-app-window-height').val() !== originalValues.windowSettings.height ||
+        $('#edit-app-window-top').val() !== originalValues.windowSettings.top ||
+        $('#edit-app-window-left').val() !== originalValues.windowSettings.left ||
+        $('#edit-app-maximize-on-start').is(':checked') !== originalValues.checkboxes.maximizeOnStart ||
+        $('#edit-app-background').is(':checked') !== originalValues.checkboxes.background ||
+        $('#edit-app-window-resizable').is(':checked') !== originalValues.checkboxes.resizableWindow ||
+        $('#edit-app-hide-titlebar').is(':checked') !== originalValues.checkboxes.hideTitleBar ||
+        $('#edit-app-locked').is(':checked') !== originalValues.checkboxes.locked ||
+        $('#edit-app-credentialless').is(':checked') !== originalValues.checkboxes.credentialless ||
+        $('#edit-app-fullpage-on-landing').is(':checked') !== originalValues.checkboxes.fullPageOnLanding
+    );
+}
+
+/* This function enables or disables the save button if there are any changes made */
+function toggleSaveButton() {
+    if (hasChanges()) {
+        $('.edit-app-save-btn').prop('disabled', false);
+    } else {
+        $('.edit-app-save-btn').prop('disabled', true);
+    }
+}
+
+/* This function enables or disables the reset button if there are any changes made */
+function toggleResetButton() {
+    if (hasChanges()) {
+        $('.edit-app-reset-btn').prop('disabled', false);
+    } else {
+        $('.edit-app-reset-btn').prop('disabled', true);
+    }
+}
+
+/* This function revers the changes made back to the original values of the edit form */
+function resetToOriginalValues() {
+    $('#edit-app-title').val(originalValues.title);
+    $('#edit-app-name').val(originalValues.name);
+    $('#edit-app-index-url').val(originalValues.indexURL);
+    $('#edit-app-description').val(originalValues.description);
+    $('#edit-app-filetype-associations').val(originalValues.fileAssociations);
+    $('#edit-app-category').val(originalValues.category);
+    $('#edit-app-window-width').val(originalValues.windowSettings.width);
+    $('#edit-app-window-height').val(originalValues.windowSettings.height);
+    $('#edit-app-window-top').val(originalValues.windowSettings.top);
+    $('#edit-app-window-left').val(originalValues.windowSettings.left);
+    $('#edit-app-maximize-on-start').prop('checked', originalValues.checkboxes.maximizeOnStart);
+    $('#edit-app-background').prop('checked', originalValues.checkboxes.background);
+    $('#edit-app-window-resizable').prop('checked', originalValues.checkboxes.resizableWindow);
+    $('#edit-app-hide-titlebar').prop('checked', originalValues.checkboxes.hideTitleBar);
+    $('#edit-app-locked').prop('checked', originalValues.checkboxes.locked);
+    $('#edit-app-credentialless').prop('checked', originalValues.checkboxes.credentialless);
+    $('#edit-app-fullpage-on-landing').prop('checked', originalValues.checkboxes.fullPageOnLanding);
+
+    if (originalValues.icon) {
+        $('#edit-app-icon').css('background-image', `url(${originalValues.icon})`);
+        $('#edit-app-icon').attr('data-url', originalValues.icon);
+        $('#edit-app-icon').attr('data-base64', originalValues.icon);
+        $('#edit-app-icon-delete').show();
+    } else {
+        $('#edit-app-icon').css('background-image', '');
+        $('#edit-app-icon').removeAttr('data-url');
+        $('#edit-app-icon').removeAttr('data-base64');
+        $('#edit-app-icon-delete').hide();
+    }
+
+    if (originalValues.socialImage) {
+        $('#edit-app-social-image').css('background-image', `url(${originalValues.socialImage})`);
+        $('#edit-app-social-image').attr('data-url', originalValues.socialImage);
+        $('#edit-app-social-image').attr('data-base64', originalValues.socialImage);
+    } else {
+        $('#edit-app-social-image').css('background-image', '');
+        $('#edit-app-social-image').removeAttr('data-url');
+        $('#edit-app-social-image').removeAttr('data-base64');
+    }
 }
 
 async function edit_app_section(cur_app_name) {
@@ -665,15 +793,15 @@ async function edit_app_section(cur_app_name) {
 
   currently_editing_app = cur_app;
 
-  // generate edit app section
-  let edit_app_section_html = generate_edit_app_section(cur_app);
-  $("#edit-app").html(edit_app_section_html);
-  $("#edit-app").show();
+    // generate edit app section
+    $('#edit-app').html(generate_edit_app_section(cur_app));
+    trackOriginalValues();  // Track initial field values
+    toggleSaveButton();  // Ensure Save button is initially disabled
+    toggleResetButton();  // Ensure Reset button is initially disabled
+    $('#edit-app').show();
 
-
-
-  const filetype_association_input = document.querySelector('textarea[id=edit-app-filetype-associations]');
-  tagify = new Tagify(filetype_association_input, {
+    const filetype_association_input = document.querySelector('textarea[id=edit-app-filetype-associations]');
+    tagify = new Tagify(filetype_association_input, {
     pattern: /\.(?:[a-z0-9]+)|(?:[a-z]+\/[a-z0-9.-]+)/, // pattern for filetype file like .pdf or MIME type like text/plain
     delimiters: null,
     whitelist: [
@@ -695,9 +823,6 @@ async function edit_app_section(cur_app_name) {
       ".exe", ".dll", ".iso"
     ],
   })
-
-
-
 
   // --------------------------------------------------------
   // Dragster
@@ -1114,85 +1239,82 @@ $(document).on("click", ".edit-app-save-btn", async function(e) {
   // disable submit button
   $(".edit-app-save-btn").prop("disabled", true);
 
-  let socialImageUrl = null;
-  if ($("#edit-app-social-image").attr("data-base64")) {
-    socialImageUrl = await handleSocialImageUpload(
-      name,
-      $("#edit-app-social-image").attr("data-base64")
-    );
-  } else if ($("#edit-app-social-image").attr("data-url")) {
-    socialImageUrl = $("#edit-app-social-image").attr("data-url");
-  }
+    let socialImageUrl = null;
+    if ($('#edit-app-social-image').attr('data-base64')) {
+        socialImageUrl = await handleSocialImageUpload(name, $('#edit-app-social-image').attr('data-base64'));
+    } else if ($('#edit-app-social-image').attr('data-url')) {
+        socialImageUrl = $('#edit-app-social-image').attr('data-url');
+    }
+    
+    puter.apps.update(currently_editing_app.name, {
+        title: title,
+        name: name,
+        indexURL: index_url,
+        icon: icon,
+        description: description,
+        maximizeOnStart: $('#edit-app-maximize-on-start').is(":checked"),
+        background: $('#edit-app-background').is(":checked"),
+        metadata: {
+            fullpage_on_landing: $('#edit-app-fullpage-on-landing').is(":checked"),
+            social_image: socialImageUrl,
+            category: category || null,
+            window_size: {
+                width: width ?? 800,
+                height: height ?? 600,
+            },
+            window_position: {
+                top: top,
+                left: left,
+            },
+            window_resizable: $('#edit-app-window-resizable').is(":checked"),
+            hide_titlebar: $('#edit-app-hide-titlebar').is(":checked"),
+            locked: $(`#edit-app-locked`).is(":checked") ?? false,
+            credentialless: $(`#edit-app-credentialless`).is(":checked") ?? true,
 
-  puter.apps
-    .update(currently_editing_app.name, {
-      title: title,
-      name: name,
-      indexURL: index_url,
-      icon: icon,
-      description: description,
-      maximizeOnStart: $("#edit-app-maximize-on-start").is(":checked"),
-      background: $("#edit-app-background").is(":checked"),
-      metadata: {
-        fullpage_on_landing: $("#edit-app-fullpage-on-landing").is(":checked"),
-        social_image: socialImageUrl,
-        category: category || null,
-        window_size: {
-          width: width ?? 800,
-          height: height ?? 600,
         },
-        window_position: {
-          top: top,
-          left: left,
-        },
-        window_resizable: $("#edit-app-window-resizable").is(":checked"),
-        hide_titlebar: $("#edit-app-hide-titlebar").is(":checked"),
-        locked: $(`#edit-app-locked`).is(":checked") ?? false,
-        credentialless: $(`#edit-app-credentialless`).is(":checked") ?? true,
-      },
-      filetypeAssociations: filetype_associations,
+        filetypeAssociations: filetype_associations,
+    }).then(async (app) => {
+        currently_editing_app = app;
+        trackOriginalValues();  // Update original values after save
+        toggleSaveButton();  //Disable Save Button after succesful save
+        toggleResetButton();  //DIsable Reset Button after succesful save
+        $('#edit-app-error').hide();
+        $('#edit-app-success').show();
+        document.body.scrollTop = document.documentElement.scrollTop = 0;
+        // Update open-app-btn
+        $(`.open-app-btn[data-app-uid="${uid}"]`).attr('data-app-name', app.name);
+        $(`.open-app[data-uid="${uid}"]`).attr('data-app-name', app.name);
+        // Update title
+        $(`.app-title[data-uid="${uid}"]`).html(html_encode(app.title));
+        // Update app link
+        $(`.app-url[data-uid="${uid}"]`).html(applink(app));
+        $(`.app-url[data-uid="${uid}"]`).attr('href', applink(app));
+        // Update icons
+        $(`.app-icon[data-uid="${uid}"]`).attr('src', html_encode(app.icon ? app.icon : './img/app.svg'));
+        $(`[data-app-uid="${uid}"]`).attr('data-app-title', html_encode(app.title));
+        $(`[data-app-name="${uid}"]`).attr('data-app-name', html_encode(app.name));
+    }).catch((err) => {
+        $('#edit-app-success').hide();
+        $('#edit-app-error').show();
+        $('#edit-app-error').html(err.error?.message);
+        // scroll to top so that user sees error message
+        document.body.scrollTop = document.documentElement.scrollTop = 0;
+        // re-enable submit button
+        $('.edit-app-save-btn').prop('disabled', false);
+    }).finally(() => {
+        puter.ui.hideSpinner();
     })
-    .then(async (app) => {
-      currently_editing_app = app;
-      $("#edit-app-error").hide();
-      $("#edit-app-success").show();
-      document.body.scrollTop = document.documentElement.scrollTop = 0;
-      // Re-enable submit button
-      $(".edit-app-save-btn").prop("disabled", false);
-      // Update open-app-btn
-      $(`.open-app-btn[data-app-uid="${uid}"]`).attr("data-app-name", app.name);
-      $(`.open-app[data-uid="${uid}"]`).attr("data-app-name", app.name);
-      // Update title
-      $(`.app-title[data-uid="${uid}"]`).html(html_encode(app.title));
-      // Update app link
-      $(`.app-url[data-uid="${uid}"]`).html(applink(app));
-      $(`.app-url[data-uid="${uid}"]`).attr("href", applink(app));
-      // Update icons
-      $(`.app-icon[data-uid="${uid}"]`).attr(
-        "src",
-        html_encode(app.icon ? app.icon : "./img/app.svg")
-      );
-      $(`[data-app-uid="${uid}"]`).attr(
-        "data-app-title",
-        html_encode(app.title)
-      );
-      $(`[data-app-name="${uid}"]`).attr(
-        "data-app-name",
-        html_encode(app.name)
-      );
-    })
-    .catch((err) => {
-      $("#edit-app-success").hide();
-      $("#edit-app-error").show();
-      $("#edit-app-error").html(err.error?.message);
-      // scroll to top so that user sees error message
-      document.body.scrollTop = document.documentElement.scrollTop = 0;
-      // re-enable submit button
-      $(".edit-app-save-btn").prop("disabled", false);
-    })
-    .finally(() => {
-      puter.ui.hideSpinner();
-    });
+})
+
+$(document).on('input change', '#edit-app input, #edit-app textarea, #edit-app select', () => {
+    toggleSaveButton();
+    toggleResetButton();
+});
+
+$(document).on('click', '.edit-app-reset-btn', function () {
+    resetToOriginalValues();
+    toggleSaveButton();   // Disable Save button since values are reverted to original
+    toggleResetButton();  //Disable Reset button since values are reverted to original
 });
 
 $(document).on("click", ".open-app-btn", async function(e) {
@@ -1354,12 +1476,15 @@ function is_valid_url(string) {
   return url.protocol === "http:" || url.protocol === "https:";
 }
 
-$(document).on("click", "#edit-app-icon-delete", async function(e) {
-  $("#edit-app-icon").css("background-image", ``);
-  $("#edit-app-icon").removeAttr("data-url");
-  $("#edit-app-icon").removeAttr("data-base64");
-  $("#edit-app-icon-delete").hide();
-});
+$(document).on('click', '#edit-app-icon-delete', async function (e) {
+    $('#edit-app-icon').css('background-image', ``);
+    $('#edit-app-icon').removeAttr('data-url');
+    $('#edit-app-icon').removeAttr('data-base64');
+    $('#edit-app-icon-delete').hide();
+
+    toggleSaveButton();
+    toggleResetButton();
+})
 
 $(document).on("click", "#edit-app-icon", async function(e) {
   const res2 = await puter.ui.showOpenFilePicker({
@@ -1379,17 +1504,17 @@ $(document).on("click", "#edit-app-icon", async function(e) {
     // Get MIME type
     let mimeType = getMimeType(fileExtension);
 
-    // Replace MIME type in the data URL
-    image = image.replace(
-      "data:application/octet-stream;base64",
-      `data:${mimeType};base64`
-    );
+        // Replace MIME type in the data URL
+        image = image.replace('data:application/octet-stream;base64', `data:${mimeType};base64`);
 
-    $("#edit-app-icon").css("background-image", `url(${image})`);
-    $("#edit-app-icon").attr("data-base64", image);
-    $("#edit-app-icon-delete").show();
-  };
-});
+        $('#edit-app-icon').css('background-image', `url(${image})`);
+        $('#edit-app-icon').attr('data-base64', image);
+        $('#edit-app-icon-delete').show();
+
+        toggleSaveButton();
+        toggleResetButton();
+    }
+})
 
 async function getBase64ImageFromUrl(imageUrl) {
   var res = await fetch(imageUrl);
@@ -2549,7 +2674,7 @@ async function initializeAssetsDirectory() {
 function generateSocialImageSection(app) {
   return `
         <label for="edit-app-social-image">Social Graph Image (1200×630 strongly recommended)</label>
-        <div id="edit-app-social-image" class="social-image-preview" ${app.metadata?.social_image ? `style="background-image:url(${html_encode(app.metadata.social_image)})" data-url="${html_encode(app.metadata.social_image)}"` : ""}>
+        <div id="edit-app-social-image" class="social-image-preview" ${app.metadata?.social_image ? `style="background-image:url(${html_encode(app.metadata.social_image)})" data-url="${html_encode(app.metadata.social_image)}" data-base64="${html_encode(app.metadata.social_image)}"` : ''}>
             <div id="change-social-image">Change Social Image</div>
         </div>
         <span id="edit-app-social-image-delete" style="${app.metadata?.social_image ? "display:block;" : ""}">Remove social image</span>
@@ -2567,22 +2692,22 @@ $(document).on("click", "#edit-app-social-image", async function(e) {
   const reader = new FileReader();
   reader.readAsDataURL(socialImage);
 
-  reader.onloadend = function() {
-    let image = reader.result;
-    // Get file extension
-    let fileExtension = res.name.split(".").pop();
-    // Get MIME type
-    let mimeType = getMimeType(fileExtension);
-    // Replace MIME type in the data URL
-    image = image.replace(
-      "data:application/octet-stream;base64",
-      `data:image/${mimeType};base64`
-    );
+    reader.onloadend = function() {
+        let image = reader.result;
+        // Get file extension
+        let fileExtension = res.name.split('.').pop();
+        // Get MIME type
+        let mimeType = getMimeType(fileExtension);
+        // Replace MIME type in the data URL
+        image = image.replace('data:application/octet-stream;base64', `data:image/${mimeType};base64`);
 
-    $("#edit-app-social-image").css("background-image", `url(${image})`);
-    $("#edit-app-social-image").attr("data-base64", image);
-    $("#edit-app-social-image-delete").show();
-  };
+        $('#edit-app-social-image').css('background-image', `url(${image})`);
+        $('#edit-app-social-image').attr('data-base64', image);
+        $('#edit-app-social-image-delete').show();
+
+        toggleSaveButton();
+        toggleResetButton();
+    }
 });
 
 $(document).on("click", "#edit-app-social-image-delete", async function(e) {
